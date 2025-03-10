@@ -26,7 +26,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.payload.pull_request.number,
-              reviewers: ['required-reviewer-username']  // replace with actual username
+              reviewers: ['Filosek']
             });
             
             const { data: reviews } = await github.rest.pulls.listReviews({
