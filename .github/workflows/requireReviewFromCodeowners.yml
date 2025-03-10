@@ -21,7 +21,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 pull_number: context.payload.pull_request.number,
-                team_reviewers: ['Test Team']
+                reviewers: ['wdsking']
               });
               
               // Check review status
