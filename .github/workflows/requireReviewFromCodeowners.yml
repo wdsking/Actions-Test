@@ -2,8 +2,14 @@ name: Required Reviews
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+    branches: 
+      - 'main'
+      - 'uat'
   pull_request_review:
     types: [submitted, dismissed]
+    branches: 
+      - 'main'
+      - 'uat'
 
 permissions:
   pull-requests: write
