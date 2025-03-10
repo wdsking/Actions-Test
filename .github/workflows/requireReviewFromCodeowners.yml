@@ -2,8 +2,18 @@ name: Required Reviews
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+    branches: 
+      - 'main'
+      - 'uat'
   pull_request_review:
     types: [submitted, dismissed]
+    branches: 
+      - 'main'
+      - 'uat'
+
+permissions:
+  pull-requests: write
+  checks: write
 
 jobs:
   check-reviews:
@@ -12,41 +22,35 @@ jobs:
       - uses: actions/github-script@v7
         with:
           script: |
-            const targetBranch = context.payload.pull_request.base.ref;
-            const protectedBranches = ['main', 'uat'];
+            await github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              reviewers: ['Filosek']
+            });
             
-            if (protectedBranches.includes(targetBranch)) {
-              // Add reviewers
-              await github.rest.pulls.requestReviewers({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: context.payload.pull_request.number,
-                team_reviewers: ['Test Team']
-              });
-              
-              // Check review status
-              const reviews = await github.rest.pulls.listReviews({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: context.payload.pull_request.number
-              });
-              
-              const approved = reviews.data.some(review => 
-                review.state === 'APPROVED' && 
-                review.user.login === 'required-reviewer'
-              );
-              
-              // Set status check
-              await github.rest.checks.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: 'Required Review Check',
-                head_sha: context.payload.pull_request.head.sha,
-                status: 'completed',
-                conclusion: approved ? 'success' : 'failure',
-                output: {
-                  title: approved ? 'Required review approved' : 'Waiting for required review',
-                  summary: approved ? 'All required reviews completed' : 'Waiting for approval from required reviewer'
-                }
-              });
-            }
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+            
+            const requiredReviewer = 'Filosek';
+            const latestReview = reviews
+              .filter(review => review.user.login === requiredReviewer)
+              .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))[0];
+            
+            const isApproved = latestReview?.state === 'APPROVED';
+            
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Required Review Check',
+              head_sha: context.payload.pull_request.head.sha,
+              status: 'completed',
+              conclusion: isApproved ? 'success' : 'failure',
+              output: {
+                title: isApproved ? 'Required review approved' : 'Waiting for required review',
+                summary: isApproved ? 'All required reviews completed' : 'Waiting for approval from required reviewer'
+              }
+            });
