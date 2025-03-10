@@ -5,6 +5,10 @@ on:
   pull_request_review:
     types: [submitted, dismissed]
 
+permissions:
+  pull-requests: write
+  checks: write
+
 jobs:
   check-reviews:
     runs-on: ubuntu-latest
